@@ -2,8 +2,7 @@
 <Configuration status="info">
     <Appenders>
         <Console name="LogToConsole" target="SYSTEM_OUT">
-            <PatternLayout disableAnsi="false"
-                           pattern="%highlight{%-5level - %msg%n}"/>
+            <PatternLayout pattern="%-5level - %msg%n" charset="866" disableAnsi="false"/>
         </Console>
         <File name="LogToFile" fileName="logs/app.log">
             <PatternLayout>
