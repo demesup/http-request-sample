@@ -1,13 +1,16 @@
 package httprequests;
 
+import httprequests.savetodb.HibernateUtil;
 import httprequests.savetodb.HttpClientSample;
-import lombok.extern.log4j.Log4j2;
+import httprequests.savetojson.HttpUrlConnectionSample;
+import lombok.extern.slf4j.Slf4j;
 import org.utils.Read;
 
 import java.io.IOException;
 
-@Log4j2
+@Slf4j
 public class Main {
+    public static HibernateUtil UTILS = new HibernateUtil();
     public static void main(String[] args) {
         try {
             Thread thread = startThread();
@@ -16,6 +19,8 @@ public class Main {
             thread.interrupt();
         } catch (Exception e) {
             log.error(e.getMessage());
+        } finally {
+            UTILS.closeSessionFactoryIfOpened();
         }
     }
 

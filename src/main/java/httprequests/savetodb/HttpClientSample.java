@@ -1,12 +1,16 @@
 package httprequests.savetodb;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Session;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+
+import static httprequests.Main.UTILS;
 
 
 /*
@@ -22,19 +26,20 @@ create table activity
     key_num       int,
     accessibility decimal
 )*/
-@Log4j2
+@Slf4j
 public class HttpClientSample {
+    static Marker activityMarker = MarkerFactory.getMarker("ACTIVITY");
 
     public static Thread start() {
-        log.debug("Start http-client");
+        log.info("Start http-client");
         Thread thread = new Thread(() -> {
             Thread current = Thread.currentThread();
             while (!current.isInterrupted()) {
                 try {
-                    httpClient();
+                    saveResponse();
                     Thread.sleep(1000 * 10);
                 } catch (InterruptedException e) {
-                    log.debug("End http-client");
+                    log.info("End http-client");
                     return;
                 }
             }
@@ -43,7 +48,7 @@ public class HttpClientSample {
         return thread;
     }
 
-    private static void httpClient() {
+    private static void saveResponse() {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create("https://www.boredapi.com/api/activity")).build();
         client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
@@ -57,11 +62,11 @@ public class HttpClientSample {
     }
 
     private static void save(Activity activity) {
-        try (Session session = HibernateUtil.session()) {
+        try (Session session = UTILS.session()) {
             session.beginTransaction();
             session.persist(activity);
             session.getTransaction().commit();
-            log.info(activity + " is saved");
+            log.info(activityMarker, "{} is saved", activity);
         } catch (Exception e) {
             log.error(e.getMessage());
         }

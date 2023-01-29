@@ -1,12 +1,15 @@
 package httprequests.savetodb;
 
 import jakarta.persistence.*;
-import lombok.ToString;
+import lombok.*;
 import org.json.JSONObject;
 
 @Entity
-@ToString
+@Setter
+@Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Table(name = "activity")
+@ToString
 public class Activity {
     @Column(name = "type")
     String type;
@@ -23,17 +26,6 @@ public class Activity {
     int key;
     @Column(name = "accessibility", precision = 2)
     float accessibility;
-
-    private Activity(String type, String activity, int participants, float price, String link, int key, float accessibility) {
-        this.type = type;
-        this.activity = activity;
-        this.participants = participants;
-        this.price = price;
-        this.link = link;
-        this.key = key;
-        this.accessibility = accessibility;
-    }
-
     public Activity() {
     }
 
