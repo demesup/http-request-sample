@@ -1,4 +1,4 @@
-package httprequests.savetojson;
+package httprequests.model;
 
 import lombok.*;
 import org.json.JSONObject;

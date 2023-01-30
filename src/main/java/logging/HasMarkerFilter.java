@@ -6,12 +6,12 @@ import ch.qos.logback.core.spi.FilterReply;
 
 public class HasMarkerFilter extends Filter<ILoggingEvent> {
 
-  @Override
-  public FilterReply decide(ILoggingEvent event) {    
-    if (event.getMarker() != null) {
-      return FilterReply.ACCEPT;
-    } else {
-      return FilterReply.DENY;
+    @Override
+    public FilterReply decide(ILoggingEvent event) {
+        if (event.getMarker() != null) {
+            return FilterReply.ACCEPT;
+        } else {
+            return FilterReply.DENY;
+        }
     }
-  }
 }

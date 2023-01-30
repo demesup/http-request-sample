@@ -1,5 +1,7 @@
-package httprequests.savetojson;
+package httprequests.sender;
 
+import httprequests.model.Joke;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -9,7 +11,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 @Slf4j
-public class HttpUrlConnectionSample {
+public class HttpUrlConnectionSample implements Sender {
     static Marker jokeMarker = MarkerFactory.getMarker("JOKE");
     static URL url;
 
@@ -22,26 +24,16 @@ public class HttpUrlConnectionSample {
     }
 
 
-    public static Thread start() {
-        log.info("Start http-url-connection");
-        Thread thread = new Thread(() -> {
-            Thread current = Thread.currentThread();
-            while (!current.isInterrupted()) {
-                try {
-                    Joke joke = getJoke();
-                    log.info(jokeMarker, "{} is saved", joke);
-                        Thread.sleep(1000 * 10);
-                } catch (InterruptedException | IOException e) {
-                    log.info("End http-url-connection");
-                    return;
-                }
-            }
-        });
-        thread.start();
-        return thread;
+    @Override
+    public Runnable workToDo() {
+        return () -> {
+            Joke joke = getJoke();
+            log.info(jokeMarker, "{} is saved", joke);
+        };
     }
 
-    private static Joke getJoke() throws IOException {
+    @SneakyThrows
+    private Joke getJoke() {
         HttpURLConnection connection = getHttpURLConnection(url);
         int status = connection.getResponseCode();
         String responseContent = getResponseContent(connection, status);

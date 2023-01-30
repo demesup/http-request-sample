@@ -1,5 +1,6 @@
-package httprequests.savetodb;
+package httprequests.sender;
 
+import httprequests.model.Activity;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Session;
 import org.slf4j.Marker;
@@ -9,8 +10,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.concurrent.CompletableFuture;
 
-import static httprequests.Main.UTILS;
+import static httprequests.savetodb.HibernateUtil.closeSessionFactoryIfOpened;
+import static httprequests.savetodb.HibernateUtil.session;
 
 
 /*
@@ -27,42 +30,29 @@ create table activity
     accessibility decimal
 )*/
 @Slf4j
-public class HttpClientSample {
+public class HttpClientSample implements Sender {
     static Marker activityMarker = MarkerFactory.getMarker("ACTIVITY");
 
-    public static Thread start() {
-        log.info("Start http-client");
-        Thread thread = new Thread(() -> {
-            Thread current = Thread.currentThread();
-            while (!current.isInterrupted()) {
-                try {
-                    saveResponse();
-                    Thread.sleep(1000 * 10);
-                } catch (InterruptedException e) {
-                    log.info("End http-client");
-                    return;
-                }
-            }
-        });
-        thread.start();
-        return thread;
+    @Override
+    public Runnable workToDo() {
+        return () -> getActivityJson().thenAccept(s -> save(
+                getActivity(s)
+        )).join();
     }
 
-    private static void saveResponse() {
+    public static CompletableFuture<String> getActivityJson() {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create("https://www.boredapi.com/api/activity")).build();
-        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenApply(HttpResponse::body)
-                .thenAccept(HttpClientSample::sendToDatabase).join();
+        return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(HttpResponse::body);
     }
 
-    private static void sendToDatabase(String str) {
-        Activity activity = Activity.createActivity(str);
-        save(activity);
+    private static Activity getActivity(String str) {
+        return Activity.createActivity(str);
     }
 
     private static void save(Activity activity) {
-        try (Session session = UTILS.session()) {
+        try (Session session = session()) {
             session.beginTransaction();
             session.persist(activity);
             session.getTransaction().commit();
@@ -70,5 +60,10 @@ public class HttpClientSample {
         } catch (Exception e) {
             log.error(e.getMessage());
         }
+    }
+
+    @Override
+    public void finish() {
+        closeSessionFactoryIfOpened();
     }
 }

@@ -1,4 +1,4 @@
-package httprequests.savetodb;
+package httprequests.model;
 
 import jakarta.persistence.*;
 import lombok.*;

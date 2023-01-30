@@ -1,41 +1,54 @@
 package httprequests;
 
-import httprequests.savetodb.HibernateUtil;
-import httprequests.savetodb.HttpClientSample;
-import httprequests.savetojson.HttpUrlConnectionSample;
+import httprequests.sender.HttpClientSample;
+import httprequests.sender.HttpUrlConnectionSample;
+import httprequests.sender.Sender;
 import lombok.extern.slf4j.Slf4j;
 import org.utils.Read;
 
-import java.io.IOException;
-
 @Slf4j
 public class Main {
-    public static HibernateUtil UTILS = new HibernateUtil();
-    public static void main(String[] args) {
-        try {
-            Thread thread = startThread();
-            log.debug("To stop sending requests enter anything");
-            Read.read();
-            thread.interrupt();
-        } catch (Exception e) {
-            log.error(e.getMessage());
-        } finally {
-            UTILS.closeSessionFactoryIfOpened();
+    enum RequestSender {
+        JOKE(new HttpUrlConnectionSample()),
+
+        ACTIVITY(new HttpClientSample());
+
+        final Sender sender;
+
+        RequestSender(Sender sender) {
+            this.sender = sender;
         }
     }
 
-    private static Thread startThread() throws IOException {
-        switch (Read.readInt(2, """
-                Enter:\s
-                \t0 - for activities
-                \t1 - for jokes""")) {
-            case 0 -> {
-                return HttpClientSample.start();
-            }
-            case 1 -> {
-                return HttpUrlConnectionSample.start();
-            }
-            default -> throw new RuntimeException("Wrong input");
+    public static void main(String[] args) {
+        try {
+            Sender sender = Read.readEnumValue(RequestSender.values()).sender;
+            Thread thread = getThread(sender);
+            thread.start();
+            log.debug("To stop sending requests enter anything");
+            Read.read();
+            thread.interrupt();
+            sender.finish();
+        } catch (Exception e) {
+            log.error(e.getMessage());
         }
+    }
+
+    private static Thread getThread(Sender sender) {
+        String senderName = sender.getClass().getSimpleName();
+        return new Thread(() -> {
+            log.info("Start " + senderName);
+            Thread current = Thread.currentThread();
+            while (!current.isInterrupted()) {
+                try {
+                    sender.workToDo().run();
+                    Thread.sleep(1000 * 10);
+                } catch (Exception e) {
+                    if (!e.getClass().equals(InterruptedException.class)) log.error(e.getMessage());
+                    log.info("End " + senderName);
+                    return;
+                }
+            }
+        });
     }
 }
