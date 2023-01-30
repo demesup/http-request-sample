@@ -9,7 +9,7 @@ public class HibernateUtil {
 
     private static final SessionFactory sessionFactory;
 
-    static {
+    static  {
         sessionFactory = new Configuration().configure("hibernate.cfg.xml").buildSessionFactory();
     }
 
@@ -22,5 +22,9 @@ public class HibernateUtil {
             session = threadLocal.get();
         }
         return session;
+    }
+
+    public static void closeSessionFactoryIfOpened() {
+        if (sessionFactory.isOpen()) sessionFactory.close();
     }
 }

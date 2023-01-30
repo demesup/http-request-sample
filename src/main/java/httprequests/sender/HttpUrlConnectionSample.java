@@ -1,41 +1,44 @@
-package httprequests;
+package httprequests.sender;
 
-import lombok.extern.log4j.Log4j2;
+import httprequests.model.Joke;
+import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
-@Log4j2
-public class HttpUrlConnectionSample {
-    public static Thread start() {
-        log.debug("Start http-url-connection");
-        Thread thread = new Thread(() -> {
-            Thread current = Thread.currentThread();
-            while (!current.isInterrupted()) {
-                try {
-                    log.info(httpUrlConnection());
-                    Thread.sleep(1000 * 10);
-                } catch (InterruptedException | IOException e) {
-                    log.debug("End http-url-connection");
-                    return;
-                }
-            }
-        });
-        thread.start();
-        return thread;
+@Slf4j
+public class HttpUrlConnectionSample implements Sender {
+    static Marker jokeMarker = MarkerFactory.getMarker("JOKE");
+    static URL url;
+
+    static {
+        try {
+            url = new URL("https://official-joke-api.appspot.com/random_joke");
+        } catch (Exception e) {
+            log.error(e.getMessage());
+        }
     }
 
-    private static String httpUrlConnection() throws IOException {
-        URL url = new URL("https://official-joke-api.appspot.com/random_joke");
+
+    @Override
+    public Runnable workToDo() {
+        return () -> {
+            Joke joke = getJoke();
+            log.info(jokeMarker, "{} is saved", joke);
+        };
+    }
+
+    @SneakyThrows
+    private Joke getJoke() {
         HttpURLConnection connection = getHttpURLConnection(url);
         int status = connection.getResponseCode();
         String responseContent = getResponseContent(connection, status);
         connection.disconnect();
-        return responseContent;
+        return Joke.createJoke(responseContent);
     }
 
     private static String getResponseContent(HttpURLConnection connection, int status) throws IOException {

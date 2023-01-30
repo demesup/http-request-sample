@@ -1,36 +1,54 @@
 package httprequests;
 
-import httprequests.savetodb.HttpClientSample;
-import lombok.extern.log4j.Log4j2;
+import httprequests.sender.HttpClientSample;
+import httprequests.sender.HttpUrlConnectionSample;
+import httprequests.sender.Sender;
+import lombok.extern.slf4j.Slf4j;
 import org.utils.Read;
 
-import java.io.IOException;
-
-@Log4j2
+@Slf4j
 public class Main {
+    enum RequestSender {
+        JOKE(new HttpUrlConnectionSample()),
+
+        ACTIVITY(new HttpClientSample());
+
+        final Sender sender;
+
+        RequestSender(Sender sender) {
+            this.sender = sender;
+        }
+    }
+
     public static void main(String[] args) {
         try {
-            Thread thread = startThread();
+            Sender sender = Read.readEnumValue(RequestSender.values()).sender;
+            Thread thread = getThread(sender);
+            thread.start();
             log.debug("To stop sending requests enter anything");
             Read.read();
             thread.interrupt();
+            sender.finish();
         } catch (Exception e) {
             log.error(e.getMessage());
         }
     }
 
-    private static Thread startThread() throws IOException {
-        switch (Read.readInt(2, """
-                Enter:\s
-                \t0 - for activities
-                \t1 - for jokes""")) {
-            case 0 -> {
-                return HttpClientSample.start();
+    private static Thread getThread(Sender sender) {
+        String senderName = sender.getClass().getSimpleName();
+        return new Thread(() -> {
+            log.info("Start " + senderName);
+            Thread current = Thread.currentThread();
+            while (!current.isInterrupted()) {
+                try {
+                    sender.workToDo().run();
+                    Thread.sleep(1000 * 10);
+                } catch (Exception e) {
+                    if (!e.getClass().equals(InterruptedException.class)) log.error(e.getMessage());
+                    log.info("End " + senderName);
+                    return;
+                }
             }
-            case 1 -> {
-                return HttpUrlConnectionSample.start();
-            }
-            default -> throw new RuntimeException("Wrong input");
-        }
+        });
     }
 }
